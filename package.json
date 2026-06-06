@@ -2,6 +2,7 @@
   "name": "replyai",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "scripts": {
     "dev": "concurrently \"vite\" \"node server/index.js\"",
     "build": "tsc && vite build",
