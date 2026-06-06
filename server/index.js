@@ -310,4 +310,4 @@ app.post('/api/refine', authMiddleware, requireAuth, async (req, res) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => console.log(`✅  Serveur ReplyAI → http://localhost:${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`✅  Serveur ReplyAI → http://0.0.0.0:${PORT}`));
