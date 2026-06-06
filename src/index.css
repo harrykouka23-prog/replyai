@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  body { background-color: #0a0f1e; }
+}
+
+@layer utilities {
+  .shimmer {
+    background: linear-gradient(90deg, #1e2a3e 0px, #253148 80px, #1e2a3e 160px);
+    background-size: 800px 100%;
+    animation: shimmer 1.8s ease-in-out infinite;
+  }
+  .glow-border {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .glow-border:hover {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12), 0 10px 40px -10px rgba(99, 102, 241, 0.2);
+  }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
