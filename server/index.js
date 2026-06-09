@@ -50,18 +50,24 @@ async function authMiddleware(req, res, next) {
   const token = header.slice(7);
 
   if (!supabaseAdmin) {
-    // Mode dégradé sans Supabase (dev rapide) — skip auth
-    console.warn('[ReplyAI] Supabase non configuré — auth ignorée');
+    console.error('[ReplyAI] supabaseAdmin est NULL — SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquant');
     return next();
   }
 
   try {
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-    if (error || !user) return next();
+    if (error) {
+      console.error('[ReplyAI] auth.getUser error:', error.message);
+      return next();
+    }
+    if (!user) {
+      console.error('[ReplyAI] auth.getUser: user null');
+      return next();
+    }
     req.supabaseUser = user;
     req.supabaseToken = token;
   } catch (err) {
-    console.error('Auth middleware error:', err);
+    console.error('[ReplyAI] Auth middleware exception:', err);
   }
   next();
 }
