@@ -146,6 +146,9 @@ app.post('/api/create-checkout-session', authMiddleware, requireAuth, async (req
 
 // ── Stripe Webhook ────────────────────────────────────────────────────────────
 
+// Vérification GET (Stripe teste l'URL avant d'enregistrer)
+app.get('/api/stripe/webhook', (_req, res) => res.sendStatus(200));
+
 app.post('/api/stripe/webhook', async (req, res) => {
   const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
   if (!stripeClient || !WEBHOOK_SECRET) return res.sendStatus(200);
