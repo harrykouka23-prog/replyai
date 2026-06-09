@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import jwt from 'jsonwebtoken';
 import Anthropic from '@anthropic-ai/sdk';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
@@ -43,31 +44,23 @@ app.use(express.json());
 
 // ── Auth middleware ───────────────────────────────────────────────────────────
 
-async function authMiddleware(req, res, next) {
+function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) return next();
 
   const token = header.slice(7);
+  const jwtSecret = process.env.SUPABASE_JWT_SECRET;
 
-  if (!supabaseAdmin) {
-    console.error('[ReplyAI] supabaseAdmin est NULL — SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquant');
+  if (!jwtSecret) {
+    console.error('[ReplyAI] SUPABASE_JWT_SECRET manquant dans les variables Railway');
     return next();
   }
 
   try {
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-    if (error) {
-      console.error('[ReplyAI] auth.getUser error:', error.message);
-      return next();
-    }
-    if (!user) {
-      console.error('[ReplyAI] auth.getUser: user null');
-      return next();
-    }
-    req.supabaseUser = user;
-    req.supabaseToken = token;
+    const decoded = jwt.verify(token, jwtSecret);
+    req.supabaseUser = { id: decoded.sub, email: decoded.email };
   } catch (err) {
-    console.error('[ReplyAI] Auth middleware exception:', err);
+    console.error('[ReplyAI] JWT verify error:', err.message);
   }
   next();
 }
