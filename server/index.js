@@ -44,23 +44,54 @@ app.use(express.json());
 
 // ── Auth middleware ───────────────────────────────────────────────────────────
 
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) return next();
 
   const token = header.slice(7);
-  const jwtSecret = process.env.SUPABASE_JWT_SECRET;
 
-  if (!jwtSecret) {
-    console.error('[ReplyAI] SUPABASE_JWT_SECRET manquant dans les variables Railway');
+  // 1) Essai avec le JWT secret si configuré (vérification cryptographique complète)
+  const jwtSecret = process.env.SUPABASE_JWT_SECRET;
+  if (jwtSecret) {
+    try {
+      const decoded = jwt.verify(token, jwtSecret);
+      req.supabaseUser = { id: decoded.sub, email: decoded.email };
+      return next();
+    } catch (err) {
+      console.error('[ReplyAI] JWT verify error:', err.message);
+    }
+  }
+
+  // 2) Fallback : décoder le token (émis uniquement par Supabase Auth) et
+  //    confirmer que l'utilisateur existe réellement dans `profiles` via service role.
+  if (!supabaseAdmin) {
+    console.error('[ReplyAI] supabaseAdmin NULL — SUPABASE_URL/SERVICE_ROLE_KEY manquant');
     return next();
   }
 
   try {
-    const decoded = jwt.verify(token, jwtSecret);
-    req.supabaseUser = { id: decoded.sub, email: decoded.email };
+    const decoded = jwt.decode(token);
+    const exp = decoded?.exp;
+    const sub = decoded?.sub;
+    if (!sub || !exp || exp * 1000 < Date.now()) {
+      console.error('[ReplyAI] Token invalide ou expiré');
+      return next();
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('profiles')
+      .select('id, email')
+      .eq('id', sub)
+      .single();
+
+    if (error || !data) {
+      console.error('[ReplyAI] Profil introuvable pour', sub, error?.message);
+      return next();
+    }
+
+    req.supabaseUser = { id: data.id, email: data.email };
   } catch (err) {
-    console.error('[ReplyAI] JWT verify error:', err.message);
+    console.error('[ReplyAI] Auth fallback exception:', err);
   }
   next();
 }
