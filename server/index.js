@@ -253,7 +253,7 @@ app.post('/api/generate', authMiddleware, requireAuth, async (req, res) => {
 
   try {
     const stream = anthropic.messages.stream({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 1024,
       system:
         `Tu es un expert en gestion de réputation pour les commerces français. ` +
@@ -278,6 +278,7 @@ app.post('/api/generate', authMiddleware, requireAuth, async (req, res) => {
     send({ done: true, credits: newCredits });
     res.end();
   } catch (err) {
+    console.error('[ReplyAI] generate error:', err instanceof Error ? err.message : err);
     send({ error: err instanceof Error ? err.message : 'Erreur inconnue' });
     res.end();
   }
@@ -321,7 +322,7 @@ app.post('/api/refine', authMiddleware, requireAuth, async (req, res) => {
 
   try {
     const stream = anthropic.messages.stream({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 512,
       system: instructions[action],
       messages: [{ role: 'user', content: text }],
@@ -337,6 +338,7 @@ app.post('/api/refine', authMiddleware, requireAuth, async (req, res) => {
     send({ done: true, credits: newCredits });
     res.end();
   } catch (err) {
+    console.error('[ReplyAI] refine error:', err instanceof Error ? err.message : err);
     send({ error: err instanceof Error ? err.message : 'Erreur inconnue' });
     res.end();
   }
