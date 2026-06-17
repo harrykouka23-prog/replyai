@@ -206,28 +206,32 @@ export default function App() {
             <LogOut className="w-3 h-3" /> Déconnexion
           </button>
 
-          {/* ── Toggle DEV (toujours visible en dev, discret) ──── */}
-          <AnimatePresence>
-            <motion.button
-              onClick={togglePro}
-              title="Toggle isPro (dev only) — aussi Ctrl+Shift+P"
-              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all duration-200"
-              style={isDevMode
-                ? { background: 'rgba(234,179,8,0.12)', color: '#fbbf24', border: '1px solid rgba(234,179,8,0.25)' }
-                : { background: 'rgba(255,255,255,0.03)', color: '#334155', border: '1px solid rgba(255,255,255,0.07)' }
-              }
-            >
-              <FlaskConical className="w-3 h-3" />
-              {isPro ? 'Mode PRO actif' : 'Mode FREE'} {isDevMode && '(surchargé)'}
-            </motion.button>
-          </AnimatePresence>
+          {/* ── Toggle DEV — masqué en production, visible seulement en local ──── */}
+          {import.meta.env.DEV && (
+            <>
+              <AnimatePresence>
+                <motion.button
+                  onClick={togglePro}
+                  title="Toggle isPro (dev only) — aussi Ctrl+Shift+P"
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all duration-200"
+                  style={isDevMode
+                    ? { background: 'rgba(234,179,8,0.12)', color: '#fbbf24', border: '1px solid rgba(234,179,8,0.25)' }
+                    : { background: 'rgba(255,255,255,0.03)', color: '#334155', border: '1px solid rgba(255,255,255,0.07)' }
+                  }
+                >
+                  <FlaskConical className="w-3 h-3" />
+                  {isPro ? 'Mode PRO actif' : 'Mode FREE'} {isDevMode && '(surchargé)'}
+                </motion.button>
+              </AnimatePresence>
 
-          {isDevMode && (
-            <button onClick={resetPro} className="text-[10px] transition-colors duration-200"
-              style={{ color: '#334155' }} title="Réinitialiser le toggle dev">
-              reset
-            </button>
+              {isDevMode && (
+                <button onClick={resetPro} className="text-[10px] transition-colors duration-200"
+                  style={{ color: '#334155' }} title="Réinitialiser le toggle dev">
+                  reset
+                </button>
+              )}
+            </>
           )}
         </footer>
       </div>

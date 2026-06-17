@@ -104,6 +104,9 @@ export default function AuthPage() {
           <span className="text-2xl font-extrabold tracking-tight text-white">
             Reply<span style={{ color: '#818cf8' }}>AI</span>
           </span>
+          <p className="text-base font-semibold mt-2 text-center max-w-xs" style={{ color: '#cbd5e1' }}>
+            Répondez à tous vos avis Google en 10 secondes.
+          </p>
           <p className="text-sm mt-1.5" style={{ color: '#64748b' }}>
             {tab === 'register'
               ? 'Créez votre compte gratuit — 20 crédits offerts'
@@ -247,11 +250,24 @@ export default function AuthPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="flex items-center justify-center gap-4 mt-6"
+          className="flex flex-col items-center gap-3 mt-6"
         >
-          {['🍽️ Restaurateurs', '✂️ Coiffeurs', '🏨 Hôteliers'].map((label) => (
-            <span key={label} className="text-[11px] font-medium" style={{ color: '#334155' }}>{label}</span>
-          ))}
+          <div className="flex items-center justify-center gap-4">
+            {['🍽️ Restaurateurs', '✂️ Coiffeurs', '🏨 Hôteliers'].map((label) => (
+              <span key={label} className="text-[11px] font-medium" style={{ color: '#64748b' }}>{label}</span>
+            ))}
+          </div>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            {['⚡ 3 réponses en 10s', '🎯 Ton sur-mesure', '✓ Prêt à publier'].map((label) => (
+              <span
+                key={label}
+                className="text-[11px] font-medium px-2.5 py-1 rounded-full"
+                style={{ background: 'rgba(99,102,241,0.10)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.20)' }}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
         </motion.div>
 
         </>)}

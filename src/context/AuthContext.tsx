@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!name.trim()) throw new Error('Le prénom est requis.');
     if (password.length < 6) throw new Error('Mot de passe trop court (6 caractères min).');
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -153,8 +153,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         : error.message;
       throw new Error(msg);
     }
-    // Si confirmation email requise → throw avec message spécial
-    throw new Error('__EMAIL_CONFIRM__');
+    // Pas de session → Supabase exige une confirmation email → écran dédié.
+    // Session présente (auto-confirmation activée) → l'utilisateur est connecté
+    // directement, onAuthStateChange (SIGNED_IN) chargera son profil.
+    if (!data.session) {
+      throw new Error('__EMAIL_CONFIRM__');
+    }
   }, []);
 
   const logout = useCallback(async () => {
