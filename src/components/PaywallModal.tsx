@@ -4,75 +4,82 @@ import { Zap, Check, X, Loader2, Star, Lock, Building2 } from 'lucide-react';
 
 type PlanId = 'monthly' | 'yearly' | 'agency';
 
+interface Benefit {
+  text: string;
+  checked: boolean;
+}
+
 interface Plan {
   id: PlanId;
   name: string;
   badge?: string;
-  badgeColor?: string;
   price: string;
   period: string;
-  subline: string;
+  bestFor: string;
   icon: React.ReactNode;
   color: string;
   glow: string;
-  border: string;
-  borderActive: string;
-  bgActive: string;
+  recommended?: boolean;
+  benefits: Benefit[];
 }
+
+const CORE: Benefit[] = [
+  { text: 'Générations illimitées', checked: true },
+  { text: 'Analyse automatique du sentiment', checked: true },
+  { text: 'Retouche rapide (traduction, ton, longueur)', checked: true },
+  { text: 'Support prioritaire 7j/7', checked: true },
+];
 
 const PLANS: Plan[] = [
   {
     id: 'monthly',
     name: 'Lancement',
     badge: 'Prix bloqué à vie',
-    badgeColor: 'rgba(251,191,36,0.15)',
     price: '19€',
     period: '/ mois',
-    subline: 'Sans engagement · Prix garanti pour les premiers',
-    icon: <Zap className="w-4 h-4" />,
+    bestFor: 'Idéal pour un commerce seul',
+    icon: <Zap className="w-5 h-5" />,
     color: '#818cf8',
     glow: 'rgba(99,102,241,0.3)',
-    border: 'rgba(99,102,241,0.15)',
-    borderActive: 'rgba(99,102,241,0.5)',
-    bgActive: 'rgba(99,102,241,0.08)',
+    benefits: [
+      ...CORE,
+      { text: '2 mois offerts', checked: false },
+      { text: 'Multi-établissements (3–5 fiches)', checked: false },
+    ],
   },
   {
     id: 'yearly',
     name: 'Annuel',
-    badge: '✦ Recommandé',
-    badgeColor: 'rgba(52,211,153,0.15)',
+    badge: 'Recommandé',
     price: '190€',
     period: '/ an',
-    subline: '~15,80€ / mois · 2 mois offerts',
-    icon: <Star className="w-4 h-4 fill-current" />,
+    bestFor: '~15,80€ / mois · le meilleur rapport',
+    icon: <Star className="w-5 h-5 fill-current" />,
     color: '#34d399',
-    glow: 'rgba(52,211,153,0.25)',
-    border: 'rgba(52,211,153,0.15)',
-    borderActive: 'rgba(52,211,153,0.5)',
-    bgActive: 'rgba(52,211,153,0.07)',
+    glow: 'rgba(52,211,153,0.3)',
+    recommended: true,
+    benefits: [
+      ...CORE,
+      { text: '2 mois offerts', checked: true },
+      { text: 'Multi-établissements (3–5 fiches)', checked: false },
+    ],
   },
   {
     id: 'agency',
     name: 'Agence',
-    badge: '3–5 fiches GMB',
-    badgeColor: 'rgba(168,85,247,0.15)',
+    badge: 'Multi-établissements',
     price: '49€',
     period: '/ mois',
-    subline: 'Franchises & multi-établissements',
-    icon: <Building2 className="w-4 h-4" />,
+    bestFor: 'Franchises & gestionnaires multi-sites',
+    icon: <Building2 className="w-5 h-5" />,
     color: '#c084fc',
-    glow: 'rgba(168,85,247,0.25)',
-    border: 'rgba(168,85,247,0.15)',
-    borderActive: 'rgba(168,85,247,0.5)',
-    bgActive: 'rgba(168,85,247,0.07)',
+    glow: 'rgba(168,85,247,0.3)',
+    benefits: [
+      ...CORE,
+      { text: '2 mois offerts', checked: false },
+      { text: '3 à 5 fiches GMB incluses', checked: true },
+    ],
   },
-];
-
-const BENEFITS = [
-  'Générations illimitées',
-  'Analyse automatique du sentiment',
-  'Retouche rapide (Traduction, Ton, Longueur)',
-  'Support prioritaire 7j/7',
 ];
 
 interface PaywallModalProps {
@@ -82,27 +89,24 @@ interface PaywallModalProps {
 }
 
 export default function PaywallModal({ open, onClose, token }: PaywallModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>('yearly');
-  const [loading, setLoading] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const activePlan = PLANS.find(p => p.id === selectedPlan)!;
-
-  const handleCheckout = async () => {
-    setLoading(true);
+  const handleCheckout = async (plan: PlanId) => {
+    setLoadingPlan(plan);
     setError(null);
     try {
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ plan: selectedPlan }),
+        body: JSON.stringify({ plan }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Erreur serveur');
       window.location.href = data.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
-      setLoading(false);
+      setLoadingPlan(null);
     }
   };
 
@@ -123,171 +127,133 @@ export default function PaywallModal({ open, onClose, token }: PaywallModalProps
           {/* Modal */}
           <motion.div
             key="modal"
-            initial={{ opacity: 0, scale: 0.92, y: 28 }}
+            initial={{ opacity: 0, scale: 0.94, y: 28 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 16 }}
+            exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none"
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-y-auto pointer-events-none"
           >
             <div
-              className="relative w-full max-w-lg pointer-events-auto rounded-3xl p-7 overflow-hidden"
+              className="relative w-full max-w-4xl pointer-events-auto rounded-3xl p-7 overflow-hidden"
               style={{
                 background: 'linear-gradient(160deg, #0f172a 0%, #0c1222 60%, #110d2a 100%)',
                 border: '1px solid rgba(99,102,241,0.25)',
-                boxShadow: `0 0 0 1px rgba(99,102,241,0.08), 0 40px 100px -20px rgba(99,102,241,0.2), 0 0 100px -30px rgba(139,92,246,0.15)`,
+                boxShadow: '0 0 0 1px rgba(99,102,241,0.08), 0 40px 100px -20px rgba(99,102,241,0.2), 0 0 100px -30px rgba(139,92,246,0.15)',
               }}
             >
               {/* Top glow */}
-              <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-80 h-64 rounded-full pointer-events-none"
+              <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-64 rounded-full pointer-events-none"
                 style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)' }} />
 
               {/* Close */}
               <button onClick={onClose}
-                className="absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-white/10"
+                className="absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-white/10 z-10"
                 style={{ color: '#475569' }}>
                 <X className="w-4 h-4" />
               </button>
 
               {/* Header */}
-              <div className="flex flex-col items-center mb-6">
-                <motion.div
-                  animate={{ rotate: [0, -6, 6, -3, 3, 0] }}
-                  transition={{ duration: 0.7, delay: 0.3 }}
-                  className="relative mb-4"
-                >
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                    style={{
-                      background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-                      boxShadow: '0 8px 32px rgba(99,102,241,0.45)',
-                    }}>
-                    <Lock className="w-6 h-6 text-white" />
-                  </div>
-                  {[0, 1, 2].map(i => (
-                    <motion.div key={i} className="absolute"
-                      style={{ top: i === 0 ? -5 : i === 1 ? 3 : -2, right: i === 0 ? -4 : i === 1 ? -9 : 5 }}
-                      animate={{ scale: [0.8, 1.3, 0.8], opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 1.6 + i * 0.4, repeat: Infinity, delay: i * 0.3 }}>
-                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                    </motion.div>
-                  ))}
-                </motion.div>
-                <h2 className="text-xl font-extrabold tracking-tight text-white text-center leading-snug">
-                  Vous avez débloqué<br />le potentiel de vos avis&nbsp;!
+              <div className="flex flex-col items-center mb-7 relative">
+                <div className="w-13 h-13 rounded-2xl flex items-center justify-center mb-3 p-3"
+                  style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', boxShadow: '0 8px 32px rgba(99,102,241,0.45)' }}>
+                  <Lock className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-2xl font-extrabold tracking-tight text-white text-center leading-snug">
+                  Choisissez votre formule
                 </h2>
-                <p className="text-sm text-center mt-1.5 max-w-xs" style={{ color: '#64748b' }}>
-                  Choisissez votre formule et continuez à répondre en 10 secondes.
+                <p className="text-sm text-center mt-1.5 max-w-sm" style={{ color: '#64748b' }}>
+                  Générations illimitées dès aujourd'hui — répondez à tous vos avis en 10 secondes.
                 </p>
               </div>
-
-              {/* ── Plan selector ─────────────────────────────────── */}
-              <div className="grid grid-cols-3 gap-2 mb-5">
-                {PLANS.map((plan) => {
-                  const active = selectedPlan === plan.id;
-                  return (
-                    <motion.button
-                      key={plan.id}
-                      type="button"
-                      onClick={() => setSelectedPlan(plan.id)}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                      className="relative flex flex-col items-center py-4 px-2 rounded-2xl transition-all duration-300 text-center overflow-hidden"
-                      style={{
-                        background: active ? plan.bgActive : 'rgba(255,255,255,0.02)',
-                        border: `1px solid ${active ? plan.borderActive : plan.border}`,
-                        boxShadow: active ? `0 0 20px ${plan.glow}` : 'none',
-                      }}
-                    >
-                      {/* Badge */}
-                      {plan.badge && (
-                        <div className="absolute top-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                          style={{ background: plan.badgeColor, color: plan.color }}>
-                          {plan.badge}
-                        </div>
-                      )}
-
-                      <div className="mt-4" style={{ color: active ? plan.color : '#475569' }}>
-                        {plan.icon}
-                      </div>
-                      <div className="text-xs font-semibold mt-1.5" style={{ color: active ? 'white' : '#64748b' }}>
-                        {plan.name}
-                      </div>
-                      <div className="text-lg font-extrabold tracking-tight mt-1" style={{ color: active ? plan.color : '#475569' }}>
-                        {plan.price}
-                      </div>
-                      <div className="text-[10px]" style={{ color: active ? plan.color : '#334155', opacity: 0.8 }}>
-                        {plan.period}
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-
-              {/* Selected plan subline */}
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={selectedPlan}
-                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.2 }}
-                  className="text-center text-xs mb-5 font-medium"
-                  style={{ color: activePlan.color }}
-                >
-                  {activePlan.subline}
-                </motion.p>
-              </AnimatePresence>
-
-              {/* Benefits */}
-              <ul className="space-y-2 mb-5">
-                {BENEFITS.map((text, i) => (
-                  <motion.li key={text}
-                    initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 + i * 0.06 }}
-                    className="flex items-center gap-2.5">
-                    <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.25)' }}>
-                      <Check className="w-2.5 h-2.5 text-emerald-400" />
-                    </div>
-                    <span className="text-xs font-medium" style={{ color: '#94a3b8' }}>{text}</span>
-                  </motion.li>
-                ))}
-              </ul>
 
               {/* Error */}
               <AnimatePresence>
                 {error && (
                   <motion.p
                     initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                    className="text-center text-xs mb-3 px-3 py-2 rounded-xl"
+                    className="text-center text-xs mb-4 px-3 py-2 rounded-xl max-w-md mx-auto"
                     style={{ color: '#f87171', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
                     {error}
                   </motion.p>
                 )}
               </AnimatePresence>
 
-              {/* CTA */}
-              <motion.button
-                onClick={handleCheckout}
-                disabled={loading}
-                whileHover={loading ? {} : { scale: 1.02 }}
-                whileTap={loading ? {} : { scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold text-white transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{
-                  background: loading
-                    ? 'rgba(99,102,241,0.35)'
-                    : `linear-gradient(135deg, ${activePlan.color}cc 0%, #7c3aed 100%)`,
-                  boxShadow: loading ? 'none' : `0 4px 28px ${activePlan.glow}`,
-                  border: `1px solid ${activePlan.borderActive}`,
-                }}
-              >
-                {loading
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Redirection vers Stripe…</>
-                  : <><Zap className="w-4 h-4 fill-current" /> Choisir {activePlan.name} · {activePlan.price}{activePlan.period}</>
-                }
-              </motion.button>
+              {/* Pricing cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {PLANS.map((plan, i) => {
+                  const isLoading = loadingPlan === plan.id;
+                  return (
+                    <motion.div
+                      key={plan.id}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 + i * 0.08, duration: 0.4 }}
+                      className="relative flex flex-col rounded-2xl p-5"
+                      style={{
+                        background: plan.recommended ? 'rgba(52,211,153,0.05)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${plan.recommended ? 'rgba(52,211,153,0.45)' : 'rgba(255,255,255,0.08)'}`,
+                        boxShadow: plan.recommended ? `0 0 30px ${plan.glow}` : 'none',
+                      }}
+                    >
+                      {plan.badge && (
+                        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold px-2.5 py-1 rounded-full"
+                          style={{ background: plan.color, color: '#0a0f1e' }}>
+                          {plan.badge}
+                        </div>
+                      )}
+
+                      {/* Header */}
+                      <div className="flex flex-col items-center text-center pb-5 mb-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                        <div className="mb-3" style={{ color: plan.color }}>{plan.icon}</div>
+                        <div className="text-sm font-semibold text-white">{plan.name}</div>
+                        <div className="mt-2 flex items-baseline gap-1">
+                          <span className="text-3xl font-extrabold tracking-tight" style={{ color: plan.color }}>{plan.price}</span>
+                          <span className="text-xs" style={{ color: '#64748b' }}>{plan.period}</span>
+                        </div>
+                        <div className="text-[11px] mt-2 leading-snug" style={{ color: '#94a3b8' }}>{plan.bestFor}</div>
+                      </div>
+
+                      {/* Benefits */}
+                      <div className="space-y-2.5 flex-1 mb-5">
+                        {plan.benefits.map((b) => (
+                          <div key={b.text} className="flex items-center gap-2.5">
+                            <span className="grid place-content-center w-4 h-4 rounded-full flex-shrink-0"
+                              style={b.checked
+                                ? { background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.3)' }
+                                : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                              {b.checked
+                                ? <Check className="w-2.5 h-2.5 text-emerald-400" />
+                                : <X className="w-2.5 h-2.5" style={{ color: '#475569' }} />}
+                            </span>
+                            <span className="text-xs font-medium" style={{ color: b.checked ? '#cbd5e1' : '#475569' }}>{b.text}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* CTA */}
+                      <motion.button
+                        onClick={() => handleCheckout(plan.id)}
+                        disabled={isLoading}
+                        whileHover={isLoading ? {} : { scale: 1.02 }}
+                        whileTap={isLoading ? {} : { scale: 0.97 }}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                        style={plan.recommended
+                          ? { background: `linear-gradient(135deg, ${plan.color}, #7c3aed)`, color: 'white', boxShadow: `0 4px 24px ${plan.glow}` }
+                          : { background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.12)' }}
+                      >
+                        {isLoading
+                          ? <><Loader2 className="w-4 h-4 animate-spin" /> Redirection…</>
+                          : <>Choisir {plan.name}</>}
+                      </motion.button>
+                    </motion.div>
+                  );
+                })}
+              </div>
 
               {/* Trust */}
-              <div className="flex items-center justify-center gap-5 mt-4">
-                {['🔒 Paiement sécurisé', '✓ Annulation facile', '🇫🇷 Support FR'].map(t => (
-                  <span key={t} className="text-[10px] font-medium" style={{ color: '#334155' }}>{t}</span>
+              <div className="flex items-center justify-center gap-5 mt-6 flex-wrap">
+                {['🔒 Paiement sécurisé par Stripe', '✓ Annulation à tout moment', '🇫🇷 Support FR'].map(t => (
+                  <span key={t} className="text-[11px] font-medium" style={{ color: '#64748b' }}>{t}</span>
                 ))}
               </div>
             </div>
