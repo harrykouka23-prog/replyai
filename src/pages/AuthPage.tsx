@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Mail, Lock, User, Eye, EyeOff, Loader2, ArrowRight, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import WaveCanvas from '../components/WaveCanvas';
 
 type Tab = 'login' | 'register';
 
@@ -52,6 +53,9 @@ export default function AuthPage() {
         <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full opacity-15"
           style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)' }} />
       </div>
+
+      {/* Fond animé (vagues réactives à la souris) */}
+      <WaveCanvas className="fixed inset-0 pointer-events-none" style={{ zIndex: 0, opacity: 0.9 }} />
 
       <div className="relative z-10 w-full max-w-md">
 
